@@ -104,26 +104,18 @@ def _get_sports_prompt(num_items: int, time_period: str, search_instruction: str
     SCHEMA: Each sports object must include EXACTLY these fields:
     - 'title': Name of the event, game, or achievement
     - 'creator': Athlete(s) or team name
-    - 'year': Year the event occurred
-    - 'description': Brief description of why this is considered legendary (50-100 characters)
-    - 'genre_tags': Array of 2-3 sport/category tags (e.g., ["Basketball", "Championship", "Comeback"])
+    - 'group': Major group/genre or team involved (if applicable)
     - 'priority': Integer from 1-{num_items} (1 = highest priority)
-    - 'estimated_time': Viewing/reading time (e.g., "2 hours", "30 minutes")
-    - 'sport': The specific sport involved
-    - 'significance': What made this moment historically important
+    - 'rating': Statistical score specific to each sports
+    - 'accolades': Array of accolades or awards (e.g., "MVP", "World Champion")
     
     EXAMPLE RESPONSE FORMAT:
     [
       {{
         "title": "Michael Jordan's Last Shot - 1998 NBA Finals",
         "creator": "Michael Jordan",
-        "year": 1998,
-        "description": "Championship-winning shot cementing GOAT status",
-        "genre_tags": ["Basketball", "Championship", "Clutch Performance"],
+        "group": "Chicago Bulls",
         "priority": 1,
-        "estimated_time": "2 hours",
-        "sport": "Basketball",
-        "significance": "Sealed Jordan's 6th championship and retirement on top"
       }}
     ]
     
@@ -151,25 +143,16 @@ def _get_music_prompt(num_items: int, time_period: str, search_instruction: str)
     - 'title': The official album title
     - 'creator': Artist or band name
     - 'year': Release year
-    - 'description': Brief description of why this is considered a classic (50-100 characters)
-    - 'genre_tags': Array of 2-3 specific music genre tags (e.g., ["Rock", "Progressive", "Concept Album"])
-    - 'priority': Integer from 1-{num_items} (1 = highest priority)
-    - 'estimated_time': Album duration (e.g., "42 minutes", "1h 15m")
-    - 'label': Record label
-    - 'influence': Brief note on cultural/musical impact
-    
+    - 'group': One specifc genre tag (e.g., ["Rock", "Hip-Hop", "Jazz"])
+    - 'order': Integer from 1-{num_items} (1 = highest priority)
     EXAMPLE RESPONSE FORMAT:
     [
       {{
         "title": "The Dark Side of the Moon",
         "creator": "Pink Floyd",
         "year": 1973,
-        "description": "Conceptual masterpiece exploring human experience",
-        "genre_tags": ["Progressive Rock", "Concept Album", "Psychedelic"],
+        "group": "Progressive Rock",
         "priority": 1,
-        "estimated_time": "43 minutes",
-        "label": "Harvest Records",
-        "influence": "Redefined album production and conceptual storytelling"
       }}
     ]
     
@@ -198,11 +181,10 @@ def _get_games_prompt(num_items: int, time_period: str, search_instruction: str)
     - 'creator': Developer/Studio name
     - 'year': Release year
     - 'description': Brief description of why this is considered a classic (50-100 characters)
-    - 'genre_tags': Array of 2-3 specific game genre tags (e.g., ["RPG", "Open World", "Story-Driven"])
-    - 'priority': Integer from 1-{num_items} (1 = highest priority)
-    - 'estimated_time': Approximate completion time (e.g., "40 hours", "15-20 hours")
-    - 'platform': Original or primary platform
-    - 'innovation': What gameplay or technical innovation it introduced
+    - 'group': One specific genre tag (e.g., ["Action-Adventure", "RPG", "Platformer"])
+    - 'priority': Integer from 1-{num_items} (1 = highest priority) based on ranking from IGN
+    - 'rating': IGN rating or critical consensus rating (e.g., "10/10", "4.5")
+    - 'accolades': Array of accolades or awards (e.g., "Game of the Year", "Best Design")
     
     EXAMPLE RESPONSE FORMAT:
     [
@@ -211,11 +193,11 @@ def _get_games_prompt(num_items: int, time_period: str, search_instruction: str)
         "creator": "Nintendo EAD",
         "year": 1998,
         "description": "3D adventure that revolutionized game design",
-        "genre_tags": ["Action-Adventure", "3D Platformer", "Fantasy"],
+        "group": aRPG,
         "priority": 1,
-        "estimated_time": "25-30 hours",
-        "platform": "Nintendo 64",
-        "innovation": "Z-targeting system and seamless 3D world exploration"
+        "accolades": [{
+            "goty": "yes",
+        }]
       }}
     ]
     
