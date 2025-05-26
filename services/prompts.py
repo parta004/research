@@ -59,12 +59,12 @@ def _get_movies_prompt(num_items: int, time_period: str, search_instruction: str
     - 'title': The official title of the film
     - 'creator': Director name
     - 'year': Release year
-    - 'description': Brief description of why this is considered a top film (50-100 characters)
-    - 'genre_tags': Array of 2-3 specific movie genre tags (e.g., ["Drama", "Crime", "Epic"])
-    - 'priority': Integer from 1-{num_items} (1 = highest priority)
-    - 'estimated_time': Runtime in hours and minutes (e.g., "2h 55m")
+    - 'group': 1 specific genre tag (e.g., "Drama", "Action", "Comedy") 
+    - 'order': Integer from 1-{num_items} (1 = highest priority)
     - 'rating': IMDB or critical consensus rating
     - 'awards': Notable awards won (if any)
+    - 'reference': Link to a relevant source or database entry (e.g., IMDB, Rotten Tomatoes)
+    - 'image_url': URL to a relevant movie poster or still
     
     EXAMPLE RESPONSE FORMAT:
     [
@@ -72,16 +72,16 @@ def _get_movies_prompt(num_items: int, time_period: str, search_instruction: str
         "title": "The Godfather",
         "creator": "Francis Ford Coppola",
         "year": 1972,
-        "description": "Epic crime saga defining the gangster genre",
-        "genre_tags": ["Crime Drama", "Epic", "Family Saga"],
-        "priority": 1,
-        "estimated_time": "2h 55m",
+        "group": "Drama",
+        "order": 1,
         "rating": "9.2/10",
         "awards": "3 Academy Awards including Best Picture"
+        "reference": "https://www.imdb.com/title/tt0068646/"
+        "image_url": "https://example.com/godfather-poster.jpg"
       }}
     ]
     
-    IMPORTANT: Focus on critically acclaimed and culturally significant films {time_text}. Ensure your response contains ONLY the JSON array.
+    IMPORTANT: Use IMDB rating or critical consensus to determine quality {time_text}. Ensure your response contains ONLY the JSON array.
     """
 
 
@@ -102,12 +102,11 @@ def _get_sports_prompt(num_items: int, time_period: str, search_instruction: str
     - If you cannot generate items, return exactly '[]' without any additional text
     
     SCHEMA: Each sports object must include EXACTLY these fields:
-    - 'title': Name of the event, game, or achievement
-    - 'creator': Athlete(s) or team name
+    - 'title': Name of the athlete
     - 'group': Major group/genre or team involved (if applicable)
     - 'priority': Integer from 1-{num_items} (1 = highest priority)
-    - 'rating': Statistical score specific to each sports
-    - 'accolades': Array of accolades or awards (e.g., "MVP", "World Champion")
+    - 'accolades': Array of maximum of 5 main accolades or awards (e.g., "MVP", "World Champion")
+    - 'image_url': URL to a relevant image of the athlete or moment
     
     EXAMPLE RESPONSE FORMAT:
     [
@@ -116,10 +115,11 @@ def _get_sports_prompt(num_items: int, time_period: str, search_instruction: str
         "creator": "Michael Jordan",
         "group": "Chicago Bulls",
         "priority": 1,
+        "accolades": ["6x NBA Champion", "5x MVP", "10x All-Star"],
+        "image_url": "https://example.com/jordan-last-shot.jpg"
       }}
     ]
     
-    IMPORTANT: Focus on legendary performances and moments that defined sports history {time_text}. Ensure your response contains ONLY the JSON array.
     """
 
 
@@ -152,7 +152,7 @@ def _get_music_prompt(num_items: int, time_period: str, search_instruction: str)
         "creator": "Pink Floyd",
         "year": 1973,
         "group": "Progressive Rock",
-        "priority": 1,
+        "order": 1,
       }}
     ]
     
@@ -180,24 +180,23 @@ def _get_games_prompt(num_items: int, time_period: str, search_instruction: str)
     - 'title': The official game title
     - 'creator': Developer/Studio name
     - 'year': Release year
-    - 'description': Brief description of why this is considered a classic (50-100 characters)
     - 'group': One specific genre tag (e.g., ["Action-Adventure", "RPG", "Platformer"])
     - 'priority': Integer from 1-{num_items} (1 = highest priority) based on ranking from IGN
     - 'rating': IGN rating or critical consensus rating (e.g., "10/10", "4.5")
     - 'accolades': Array of accolades or awards (e.g., "Game of the Year", "Best Design")
-    
+    - 'image_url': URL to a relevant game cover or screenshot
+        
     EXAMPLE RESPONSE FORMAT:
     [
       {{
         "title": "The Legend of Zelda: Ocarina of Time",
         "creator": "Nintendo EAD",
         "year": 1998,
-        "description": "3D adventure that revolutionized game design",
         "group": aRPG,
         "priority": 1,
-        "accolades": [{
-            "goty": "yes",
-        }]
+        "accolades": ["GOTY"],
+        "rating": "10/10",
+        "image_url": "https://example.com/zelda-ocarina.jpg"
       }}
     ]
     
@@ -224,22 +223,18 @@ def _get_generic_prompt(category: str, num_items: int, time_period: str, search_
     SCHEMA: Each item object must include EXACTLY these fields:
     - 'title': The official title of the work
     - 'creator': Creator/Author/Developer/Artist name
-    - 'year': Release/publication year
     - 'description': Brief description of why this is considered top-tier (50-100 characters)
     - 'genre_tags': Array of 2-3 specific sub-category tags
     - 'priority': Integer from 1-{num_items} (1 = highest priority)
-    - 'estimated_time': Estimated time to complete/consume (e.g., "2 hours", "300 pages")
     
     EXAMPLE RESPONSE FORMAT:
     [
       {{
         "title": "Example Title",
         "creator": "Example Creator",
-        "year": 2000,
         "description": "Brief description of significance",
         "genre_tags": ["Tag1", "Tag2", "Tag3"],
         "priority": 1,
-        "estimated_time": "2 hours"
       }}
     ]
     
