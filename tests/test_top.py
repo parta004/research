@@ -1,6 +1,11 @@
 import time
 import json
 import logging
+from pathlib import Path
+import sys
+current_dir = Path(__file__).parent
+research_service_dir = current_dir.parent
+sys.path.insert(0, str(research_service_dir))
 from typing import Dict, List
 from services.llm import create_backlog
 
@@ -11,7 +16,7 @@ def test_llm_performance(
     category: str = "movies",
     num_items: int = 2,
     time_period: str = "all_time",
-    search_provider: str = "duckduckgo",
+    search_provider: str = "brave",
     models: List[str] = None
 ) -> Dict:
     """
@@ -160,7 +165,7 @@ def test_category_comparison(categories: List[str] = None, model: str = "openai"
         start_time = time.time()
         
         try:
-            result = create_backlog(category, model, 2, "all_time", False, "duckduckgo", True, 1.0)
+            result = create_backlog(category, model, 2, "all_time", False, "brave", True, 1.0)
             end_time = time.time()
             
             results[category] = {

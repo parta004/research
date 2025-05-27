@@ -1,15 +1,13 @@
-from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from langchain_community.utilities import BraveSearchWrapper
-from langchain.tools import Tool
+from langchain_community.tools import DuckDuckGoSearchRun
 from dotenv import load_dotenv
 import os
 import re
 import logging
 import time
-import requests
 import json
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 load_dotenv()
 
@@ -39,7 +37,19 @@ def _apply_rate_limit():
     _last_search_time = time.time()
 
 
-def search_for_image_url(query: str, provider: str = "duckduckgo", image_size: str = "medium") -> Optional[str]:
+def set_search_delay(delay_seconds: float):
+    """Set the delay between search requests."""
+    global _search_delay
+    _search_delay = delay_seconds
+    logger.info(f"Search delay set to {delay_seconds} seconds")
+
+
+def get_search_delay() -> float:
+    """Get the current search delay setting."""
+    return _search_delay
+
+
+def search_for_image_url(query: str, provider: str = "brave", image_size: str = "medium") -> Optional[str]:
     """
     Search for an image URL using the specified search provider with proper image search.
     
@@ -105,8 +115,8 @@ def _search_google_images(query: str, image_size: str = "medium") -> Optional[st
         search = GoogleSerperAPIWrapper(
             serper_api_key=GOOGLE_SERPER_API_KEY,
             type="images",
-            tbs=f"isz:{_get_google_size_param(image_size)}",  # Image size parameter
-            num=10  # Get more results to choose from
+            tbs=f"isz:{_get_google_size_param(image_size)}",
+            num=10
         )
         
         logger.info(f"Searching Google Images for: '{query}' (size: {image_size})")
@@ -127,7 +137,6 @@ def _search_google_images(query: str, image_size: str = "medium") -> Optional[st
             # Try to find the best image
             for image in images:
                 if isinstance(image, dict):
-                    # Try different possible URL fields
                     image_url = (image.get("imageUrl") or 
                                image.get("link") or 
                                image.get("url") or
@@ -262,12 +271,12 @@ def _extract_multiple_image_urls_from_text(text: str) -> List[str]:
         r'https?://[^\s<>"\']*(?:image|img|poster|cover|photo|picture)[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',
         
         # Specific site patterns
-        r'https?://m\.media-amazon\.com/images/[^\s<>"\']+',  # Amazon images
-        r'https?://[^\s<>"\']*imdb[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',  # IMDB
-        r'https?://upload\.wikimedia\.org/[^\s<>"\']+\.(?:jpg|jpeg|png|gif|webp)',  # Wikipedia
-        r'https?://[^\s<>"\']*igdb[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',  # IGDB
-        r'https?://[^\s<>"\']*steamcdn[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',  # Steam
-        r'https?://[^\s<>"\']*discogs[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',  # Discogs
+        r'https?://m\.media-amazon\.com/images/[^\s<>"\']+',
+        r'https?://[^\s<>"\']*imdb[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',
+        r'https?://upload\.wikimedia\.org/[^\s<>"\']+\.(?:jpg|jpeg|png|gif|webp)',
+        r'https?://[^\s<>"\']*igdb[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',
+        r'https?://[^\s<>"\']*steamcdn[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',
+        r'https?://[^\s<>"\']*discogs[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',
         
         # Generic CDN patterns
         r'https?://[^\s<>"\']*cdn[^\s<>"\']*\.(?:jpg|jpeg|png|gif|webp)',
@@ -279,7 +288,6 @@ def _extract_multiple_image_urls_from_text(text: str) -> List[str]:
     for pattern in image_patterns:
         matches = re.findall(pattern, text, re.IGNORECASE)
         for match in matches:
-            # Clean the URL (remove trailing punctuation/quotes)
             clean_url = re.sub(r'[.,;:!?\'">\]})]+$', '', match)
             if clean_url not in found_urls and _is_valid_image_url(clean_url):
                 found_urls.append(clean_url)
@@ -290,15 +298,12 @@ def _extract_multiple_image_urls_from_text(text: str) -> List[str]:
 def _is_valid_image_url(url: str) -> bool:
     """Enhanced validation for image URLs."""
     
-    # Basic validation
     if not url or len(url) < 10:
         return False
     
-    # Should start with http/https
     if not url.startswith(('http://', 'https://')):
         return False
     
-    # Should end with image extension or contain image-related paths
     image_indicators = [
         '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp',
         '/images/', '/img/', '/poster/', '/cover/', '/photo/', '/picture/',
@@ -308,11 +313,10 @@ def _is_valid_image_url(url: str) -> bool:
     url_lower = url.lower()
     has_indicator = any(indicator in url_lower for indicator in image_indicators)
     
-    # Avoid obviously bad URLs
     bad_indicators = [
         'facebook.com', 'twitter.com', 'instagram.com', 'linkedin.com',
         'youtube.com', 'tiktok.com', '.css', '.js', '.html', '.pdf',
-        'amazon.com/dp/', 'amazon.com/gp/'  # Product pages, not images
+        'amazon.com/dp/', 'amazon.com/gp/'
     ]
     
     has_bad_indicator = any(bad in url_lower for bad in bad_indicators)
@@ -320,43 +324,6 @@ def _is_valid_image_url(url: str) -> bool:
     return has_indicator and not has_bad_indicator
 
 
-def set_search_delay(delay_seconds: float):
-    """Set the delay between search requests."""
-    global _search_delay
-    _search_delay = delay_seconds
-    logger.info(f"Search delay set to {delay_seconds} seconds")
-
-
-def get_search_delay() -> float:
-    """Get the current search delay setting."""
-    return _search_delay
-
-
-def get_search_tool(provider: str = "duckduckgo") -> Tool:
-    """Get a LangChain Tool for the specified search provider."""
-    
-    if provider == "duckduckgo":
-        return DuckDuckGoSearchRun()
-    elif provider == "google" and GOOGLE_SERPER_API_KEY:
-        search = GoogleSerperAPIWrapper(serper_api_key=GOOGLE_SERPER_API_KEY)
-        return Tool(
-            name="Google Search",
-            description="Search the web using Google Serper API",
-            func=search.run
-        )
-    elif provider == "brave" and BRAVE_API_KEY:
-        search = BraveSearchWrapper(api_key=BRAVE_API_KEY)
-        return Tool(
-            name="Brave Search",
-            description="Search the web using Brave Search API",
-            func=search.run
-        )
-    else:
-        logger.warning(f"Provider {provider} not available, using DuckDuckGo")
-        return DuckDuckGoSearchRun()
-
-
-# Test function with improved image search
 def test_image_search():
     """Test improved image search functionality with different providers."""
     
@@ -388,7 +355,6 @@ def test_image_search():
             search_start = time.time()
             print(f"{provider.upper()}:")
             
-            # Test with medium size (good for thumbnails)
             image_url = search_for_image_url(query, provider, "medium")
             search_end = time.time()
             search_time = round(search_end - search_start, 2)

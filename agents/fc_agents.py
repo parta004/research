@@ -2,10 +2,10 @@ import json
 import logging
 from typing import List
 
-from models import get_llm_model
-from parsers import extract_json_from_text
-from fc_schemas import AgentAnalysis, ResearchData, FactCheckConfig
-from fc_prompts import get_agent_prompts
+from helpers.model_management import get_llm_model
+from helpers.response_parser import extract_json_from_text
+from schemas.fc_schemas import AgentAnalysis, ResearchData, FactCheckConfig
+from prompts.fc_prompts import get_agent_prompts
 
 logger = logging.getLogger(__name__)
 

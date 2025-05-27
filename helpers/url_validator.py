@@ -1,7 +1,7 @@
 import requests
 import logging
 from typing import List, Dict
-from services.search_tools import search_for_image_url
+from search.search_tools import search_for_image_url
 
 logger = logging.getLogger(__name__)
 

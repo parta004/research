@@ -1,10 +1,16 @@
-import json
+import sys
+import os
+from pathlib import Path
+import logging
+current_dir = Path(__file__).parent
+research_service_dir = current_dir.parent
+sys.path.insert(0, str(research_service_dir))
 import time
-from typing import Dict, List
+# Now import from services
+from services.fc import fact_check_statement, create_fact_checker
+from schemas.fc_schemas import FactCheckConfig
 
-from fact_checker import fact_check_statement, create_fact_checker
-from fc_schemas import FactCheckConfig
-
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def test_basic_fact_check():
     """Test basic fact-checking functionality"""
@@ -23,15 +29,95 @@ def test_basic_fact_check():
     
     print(f"Statement: {result.statement}")
     print(f"Speaker: {result.speaker}")
+    print(f"Context: {result.context}")
     print(f"Overall Verdict: {result.overall_verdict}")
     print(f"Confidence: {result.confidence:.2f}")
-    print(f"Agent Analyses: {len(result.agent_analyses)}")
+    print(f"Number of Agent Analyses: {len(result.agent_analyses)}")
+    print(f"Number of Sources: {len(result.sources)}")
     
-    # Print each agent's verdict
-    for analysis in result.agent_analyses:
-        print(f"  {analysis.agent_name}: {analysis.verdict} (confidence: {analysis.confidence_score:.2f})")
+    print("\n" + "="*80)
+    print("WEB RESEARCH SUMMARY:")
+    print("="*80)
+    print(result.web_research_summary)
+    
+    print("\n" + "="*80)
+    print("DETAILED AGENT ANALYSES:")
+    print("="*80)
+    
+    for i, analysis in enumerate(result.agent_analyses, 1):
+        print(f"\n{'-'*60}")
+        print(f"AGENT {i}: {analysis.agent_name.upper()}")
+        print(f"{'-'*60}")
+        
+        print(f"🎯 VERDICT: {analysis.verdict}")
+        print(f"📊 CONFIDENCE: {analysis.confidence_score:.2f}")
+        print(f"👁️  PERSPECTIVE: {analysis.perspective}")
+        
+        print(f"\n📝 ANALYSIS:")
+        print(f"{analysis.analysis}")
+        
+        print(f"\n🔍 KEY FINDINGS:")
+        for j, finding in enumerate(analysis.key_findings, 1):
+            print(f"  {j}. {finding}")
+        
+        print(f"\n🧠 REASONING:")
+        print(f"{analysis.reasoning}")
+        
+        if analysis.supporting_evidence:
+            print(f"\n📚 SUPPORTING EVIDENCE:")
+            for j, evidence in enumerate(analysis.supporting_evidence, 1):
+                source = evidence.get('source', 'Unknown source')
+                excerpt = evidence.get('excerpt', 'No excerpt provided')
+                # Truncate long excerpts for readability
+                if len(excerpt) > 200:
+                    excerpt = excerpt[:200] + "..."
+                print(f"  {j}. Source: {source}")
+                print(f"     Excerpt: {excerpt}")
+        else:
+            print(f"\n📚 SUPPORTING EVIDENCE: None provided")
+    
+    print("\n" + "="*80)
+    print("RESEARCH SOURCES:")
+    print("="*80)
+    
+    if result.sources:
+        for i, source in enumerate(result.sources, 1):
+            source_type = source.get('type', 'Unknown')
+            excerpt = source.get('excerpt', 'No excerpt available')
+            print(f"{i}. [{source_type.upper()}] {excerpt}")
+    else:
+        print("No sources available")
+    
+    print("\n" + "="*80)
+    print("SUMMARY:")
+    print("="*80)
+    print(f"Final Assessment: {result.overall_verdict} (Confidence: {result.confidence:.1%})")
+    
+    # Calculate agent agreement
+    verdicts = [analysis.verdict for analysis in result.agent_analyses]
+    verdict_counts = {}
+    for verdict in verdicts:
+        verdict_counts[verdict] = verdict_counts.get(verdict, 0) + 1
+    
+    print(f"Agent Consensus:")
+    for verdict, count in verdict_counts.items():
+        percentage = (count / len(verdicts)) * 100
+        print(f"  {verdict}: {count}/{len(verdicts)} agents ({percentage:.1f}%)")
+    
+    avg_confidence = sum(a.confidence_score for a in result.agent_analyses) / len(result.agent_analyses)
+    print(f"Average Agent Confidence: {avg_confidence:.1%}")
     
     return result
+
+# Statement: The unemployment rate has never been lower in our country's history
+# Speaker: Political Candidate X
+# Overall Verdict: MISLEADING
+# Confidence: 0.82
+# Agent Analyses: 4
+#   conspirator: MISLEADING (confidence: 0.85)
+#   nerd: MISLEADING (confidence: 0.85)
+#   joe: MISLEADING (confidence: 0.80)
+#   factchecker: MISLEADING (confidence: 0.80)
 
 
 def test_multiple_models():
@@ -47,8 +133,8 @@ def test_multiple_models():
             "when": "December 2024"
         }
     }
-    
-    models = ["openai", "groq", "google"]
+    models = ["groq"] 
+    # models = ["openai", "groq", "google"]
     results = {}
     
     for model in models:
@@ -97,7 +183,7 @@ def test_search_providers():
         }
     }
     
-    providers = ["duckduckgo", "google"]  # Add "brave" if you have API key
+    providers = ["duckduckgo", "google", "brave"] 
     
     for provider in providers:
         print(f"\nTesting with {provider.upper()} search...")
@@ -182,10 +268,10 @@ def run_comprehensive_test():
     model_results = test_multiple_models()
     
     # Search provider test
-    test_search_providers()
+    # test_search_providers()
     
     # Agent performance
-    test_agent_performance()
+    # test_agent_performance()
     
     print("\n" + "=" * 60)
     print("TEST SUITE COMPLETED")

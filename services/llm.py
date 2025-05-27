@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from helpers.model_management import get_llm_model
 from helpers.response_parser import parse_llm_response, validate_item
 from helpers.url_validator import validate_and_fix_image_urls, fill_missing_image_urls
-from prompts import get_prompt_template
-from search_tools import set_search_delay
+from services.prompts import get_prompt_template
+from search.search_tools import set_search_delay
 from helpers.agent_management import create_search_agent
 
 load_dotenv()

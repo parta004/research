@@ -1,10 +1,8 @@
 import logging
 from typing import Dict, List
-from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_community.utilities import WikipediaAPIWrapper
-
 from helpers.model_management import get_llm_model
-from search_tools import set_search_delay, get_search_tool
+from search.search_tools import set_search_delay, get_search_tool
 from schemas.fc_schemas import StatementInput, ResearchData, FactCheckConfig
 from prompts.fc_prompts import get_research_summary_prompt
 
